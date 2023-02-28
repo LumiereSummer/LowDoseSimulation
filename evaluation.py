@@ -1,6 +1,41 @@
 #model evaluation
 
+import os
+import random
+import math
+import shutil
+import cv2
+import csv
+import numpy as np
+import pandas as pd
 
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+from PIL import Image, ImageDraw
+
+import pywt
+import pydicom as dicom
+from pydicom.pixel_data_handlers.util import apply_modality_lut
+
+import pylab as py
+import radialProfile
+from scipy import fftpack
+
+import skimage
+from skimage import transform
+from skimage.metrics import structural_similarity as ssim
+from skimage.metrics import mean_squared_error as mse
+from skimage.filters import try_all_threshold
+from skimage.morphology import (erosion, dilation, closing, opening,
+                                area_closing, area_opening)
+
+import sklearn
+from sklearn.metrics import mutual_info_score as mi 
+from sklearn.metrics import mean_absolute_error as mae
+from scipy import stats, signal
+
+from tensorflow.keras import backend as K
 
 
 ******
@@ -102,13 +137,6 @@ styles = [dict(selector="caption",
                props=[("text-align", "middle"),
                       ("font-size", "200%"),
                       ("color", 'black')])]
-
-
-
-
-******
-
-******
 
 
 
@@ -689,8 +717,10 @@ def spectrumcompare2h(outputpath1,outputpath2,imgoutput1,imgoutput2):
         
         
         
-        
-        
+******   
+main  
+******
+
 
 outphdr,outpsmr,outpldr,outpcpr=outputanalyse_m(outputpath_r,imgoutput_r)
 
@@ -792,7 +822,6 @@ histcpr
 
 
 spectrumcompare2(outputpath_r,outputpath_u,imgoutput_r,imgoutput_u)
-
 
 
 
