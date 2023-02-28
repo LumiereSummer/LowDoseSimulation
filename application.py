@@ -84,4 +84,21 @@ for i in range(len(imgouputs_rm32)):
     imgoutputs_rm32.append(img)
     plt.imsave(outputsim_rm32+nm+'_2.5.png',img,cmap='gray')
 
+***
+histogram matching
+***
+x1, y1 = ecdf(source.ravel())
+x2, y2 = ecdf(template.ravel())
+x3, y3 = ecdf(matched.ravel())
 
+plt.figure(figsize=(15,8))
+
+plt.plot(x1, y1 * 100, '-r', lw=5, label='Source')
+plt.plot(x2, y2 * 100, '-k', lw=5, label='Reference')
+plt.plot(x3, y3 * 100, '--y', lw=5, label='Matched')
+#plt.xlim(x1[0], x1[-1])
+plt.tick_params(labelsize=15)
+plt.xlabel('Pixel value',fontsize=30)
+plt.ylabel('Cumulative %',fontsize=30)
+plt.legend(loc=5,fontsize=28)
+plt.title('Cumulative Histogram Comparison',fontsize=40)
