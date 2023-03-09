@@ -1,3 +1,6 @@
+#the functions used
+
+
 import os
 import random
 import math
@@ -38,9 +41,11 @@ from tensorflow.keras import backend as K
 
 from models import *
 
+***
+Data Preparation
+***
 
-
-
+#read dicom images (original)
 def readdicom(nm,dspath,window):
     
     ds=dicom.dcmread(os.path.join(dspath,nm))
@@ -52,7 +57,7 @@ def readdicom(nm,dspath,window):
     return img
 
 
-
+#read dicom images (with modified pixels)
 def readdicomm(nm,im,dspath,window):
     
     ds=dicom.dcmread(os.path.join(dspath,nm))
@@ -63,7 +68,8 @@ def readdicomm(nm,im,dspath,window):
         img=im
     return img
 
-
+  
+#define the window
 def window_image(image, ds, window_center, window_width):
 
     hu = apply_modality_lut(image, ds)
@@ -77,9 +83,7 @@ def window_image(image, ds, window_center, window_width):
 
     return window_image
 
-
-
-
+#choice of windows
 def set_window(img,ds,window):
     
     window_option={
@@ -95,7 +99,7 @@ def set_window(img,ds,window):
 
 
    
-    
+#3D array to 2D
 def dmreduce(arr):
     a=[]
     for i in range(len(arr)):
@@ -104,8 +108,7 @@ def dmreduce(arr):
             
     return np.array(a)
     
-    
-    
+#3D array to 4D
 def dim_exp(imgs):
     imgs_dimep=[]
     for i in range(len(imgs)):
@@ -119,8 +122,7 @@ def dim_exp(imgs):
             
     return np.array(imgs_dimep)
 
-
-
+#4D array to 3D
 def dim_unexp(img):
     
     imgf=[]
@@ -133,7 +135,7 @@ def dim_unexp(img):
     return np.array(imgf)
 
 
-
+#pair low dose and high dose images of patient 0
 def matchloc(imnms120,imnms80,dspath):
     
     locs120=[]
@@ -188,7 +190,9 @@ def matchloc(imnms120,imnms80,dspath):
 
 
 
+#split images into patches
 def imgtopatch(imgs,patch_size):
+    
     nms=imgs.shape[0]
     h=imgs.shape[1]
     w=imgs.shape[2]
@@ -217,19 +221,15 @@ def imgtopatch(imgs,patch_size):
             patches[idx]=img[i-patch_size:i, j-patch_size:j]
                 
         img_patches.append(patches)
-    '''
-    img_patches=np.lib.stride_tricks.as_strided(imgs,shape=(nms,int(h/patch_size)*int(w/patch_size),patch_size,patch_size),
-                                    strides=(h*w*8,8*patch_size**2,8*patch_size,8))
-    '''    
-        
         
     return np.array(img_patches)
 
 
 
 
-
+#assemble patches to images
 def patchtoimg(patches,img_size):
+    
     nms=patches.shape[0]
     #print(nms)
     patch_nms=patches.shape[1]
@@ -252,17 +252,15 @@ def patchtoimg(patches,img_size):
         img=np.concatenate(rows,axis=0)
         #plt.figure(figsize=(20,20))
         #plt.imshow(img)
-        imgs.append(img)
-    
+        imgs.append(img)    
   
     return np.array(imgs)
  
- 
+   
 
-
-
-
+#remove ".png" from images names
 def rmpng(imnms):
+  
     for i in range(len(imnms)):
         nm=imnms[i]
         imnms[i]=nm.split('.')[0]
@@ -270,49 +268,14 @@ def rmpng(imnms):
     return imnms
 
 
-def imsmatch(template,imgs):
-    imgs_match=[]
-    for im in imgs:
-        matched = hist_match(im, template)
-        imgs_match.append(matched)
-    
-    return imgs_match
+  
 
-
-def findref(pathref,imnmsref,imnms,path):
-    imnm_refs=[]
-    for i in range(len(imnms)):
-        print('search reference image of ',imnms[i])
-        nm=os.path.join(path,imnms[i])
-        im=readdicom(nm,path,'midastinum')
-        imnm_ref=matchimnm(im,imnmsref,pathref)[1][0]
-        print("reference image for image {} is image {}".format(imnms[i], imnm_ref))
-        imnm_refs.append(imnm_ref)
-    return imnm_refs
-
-def imshistmatch(imnms, path, imnms_ref, pathref,pathmatch):
-    matched=[]
-    for i in range(len(imnms)):
-        nm=os.path.join(path,imnms[i])
-        #print(nm)
-        im=readdicom(nm,path,None)
-        #plt.figure()
-        #plt.imshow(im,cmap='gray')
-        nm_ref=os.path.join(pathref,imnms_ref[i])
-        im_ref=readdicom(nm_ref,pathref,None)
-        #plt.figure()
-        #plt.imshow(im_ref[101:390,50:460],cmap='gray')
-        #im_match=hist_match(im,im_ref[101:390,50:460])
-        im_match=hist_match(im,im_ref)
-        #plt.figure()
-        #plt.imshow(im_match,cmap='gray')
-        plt.imsave(os.path.join(pathmatch,imnms[i])+'m.png',im_match,cmap='gray')
-        matched.append(im_match)
-    return matched
-
-
-
-
+***
+Histogram Matching & Histogram Correlation
+***
+  
+  
+#show the global histogram of all images in a dictionary, get these images and their names
 def readimhist(path):
     
     imgnms=os.listdir(path)
@@ -333,7 +296,8 @@ def readimhist(path):
         
     return imsnms,imgs
 
-
+ 
+#show the global histogram of selected images, and get these images
 def readimnmhist(path,imsnms):
     
     imgs=[]
@@ -347,24 +311,9 @@ def readimnmhist(path,imsnms):
     
     
     
-
+#Histogram Matching: 
+#Adjust the pixel values of a grayscale image so that its histogram matches that of a target image
 def hist_match(source, template):
-    """
-    Adjust the pixel values of a grayscale image such that its histogram
-    matches that of a target image
-
-    Arguments:
-    -----------
-        source: np.ndarray
-            Image to transform; the histogram is computed over the flattened
-            array
-        template: np.ndarray
-            Template image; can have different dimensions to source
-    Returns:
-    -----------
-        matched: np.ndarray
-            The transformed output image
-    """
 
     oldshape = source.shape
     source = source.ravel()
@@ -390,18 +339,67 @@ def hist_match(source, template):
 
     return interp_t_values[bin_idx].reshape(oldshape)
 
-
+#computing the empirical CDF: Cumulative Histogram
 def ecdf(x):
-    """convenience function for computing the empirical CDF"""
+  
     vals, counts = np.unique(x, return_counts=True)
     ecdf = np.cumsum(counts).astype(np.float64)
     ecdf /= ecdf[-1]
     return vals, ecdf
+ 
+  
+#match images with one reference image
+def imsmatch(template,imgs):
+    
+    imgs_match=[]
+    for im in imgs:
+        matched = hist_match(im, template)
+        imgs_match.append(matched)
+    
+    return imgs_match
+
+  
+#find the corresponding reference image (from many) for selected images 
+def findref(pathref,imnmsref,imnms,path):
+    
+    imnm_refs=[]
+    for i in range(len(imnms)):
+        print('search reference image of ',imnms[i])
+        nm=os.path.join(path,imnms[i])
+        im=readdicom(nm,path,'midastinum')
+        imnm_ref=matchimnm(im,imnmsref,pathref)[1][0]
+        print("reference image for image {} is image {}".format(imnms[i], imnm_ref))
+        imnm_refs.append(imnm_ref)
+    
+    return imnm_refs
+
+#match images with their corresponding reference images
+def imshistmatch(imnms, path, imnms_ref, pathref,pathmatch):
+    
+    matched=[]
+    for i in range(len(imnms)):
+        nm=os.path.join(path,imnms[i])
+        #print(nm)
+        im=readdicom(nm,path,None)
+        #plt.figure()
+        #plt.imshow(im,cmap='gray')
+        nm_ref=os.path.join(pathref,imnms_ref[i])
+        im_ref=readdicom(nm_ref,pathref,None)
+        #plt.figure()
+        #plt.imshow(im_ref[101:390,50:460],cmap='gray')
+        #im_match=hist_match(im,im_ref[101:390,50:460])
+        im_match=hist_match(im,im_ref)
+        #plt.figure()
+        #plt.imshow(im_match,cmap='gray')
+        plt.imsave(os.path.join(pathmatch,imnms[i])+'m.png',im_match,cmap='gray')
+        matched.append(im_match)
+    
+    return matched
 
 
-
-
+#Thresholding: give the threshold pixel vaule to those who exceeds the threshold (the anomaly pixel)
 def pthres(img,thres):
+    
     w=img.shape[0]
     h=img.shape[1]
     img_thr=np.zeros((w, h))
@@ -411,9 +409,12 @@ def pthres(img,thres):
                 img_thr[i][j]=thres
             else:
                 img_thr[i][j]=img[i][j]
+    
     return img_thr
 
+#Thresholding: give 0 to those who exceeds the threshold pixel value (the anomaly pixel)
 def pthres0(img,thres):
+    
     w=img.shape[0]
     h=img.shape[1]
     img_thr=np.zeros((w, h))
@@ -423,21 +424,25 @@ def pthres0(img,thres):
                 img_thr[i][j]=0
             else:
                 img_thr[i][j]=img[i][j]
+    
     return img_thr
 
 
-
+#calculate the histogram correlation of two images
 def histcorr(im1,im2):
+    
     hist_img1=cv2.calcHist([im1.astype(np.uint8)],[0],None,[10],[-150, 100])
     cv2.normalize(hist_img1, hist_img1, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
     hist_img2=cv2.calcHist([im2.astype(np.uint8)],[0],None,[10],[-150, 100])
     cv2.normalize(hist_img2, hist_img2, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
     histocorr = cv2.compareHist(hist_img2, hist_img1, cv2.HISTCMP_CORREL)
     #print("histogram correlation is :",histocorr)
+    
     return histocorr
 
 
-
+#find the best scaling factor for simulating the desired dose images
+#return to the best scaling factor (kmax) and the best HC (Histogram Correlation) value
 def findscale(imnmsref,pathref,imnmsinput,imsinput,outputs,filenm):
     
     ks=[1.0,1.2,1.5,1.8,2.0,2.2,2.5,2.8,3.0]
@@ -479,6 +484,13 @@ def findscale(imnmsref,pathref,imnmsinput,imsinput,outputs,filenm):
 
 
 
+***
+Model Output
+***
+
+  
+#apply the trained model on other images : take U Net model as example
+#change the checkpoint and model for applying other model
 def model213output(checkpoint,imgs):
     
     model0=generator33((64,64,1))
