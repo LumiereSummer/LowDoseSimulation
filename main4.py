@@ -8,15 +8,9 @@ Adam,epoch=1200
 @author: xialumi
 '''
 
-from paras2 import *
-from resnet import *
-from InputGeneratePatch import *
-#from model3 import *
-#from model31 import *
-#from model4 import *
-#from model5 import *
-#from model1 import *
-#from model6 import *
+from readdata import *
+from utils import *
+from model_Unet import *
 
 from train_model3 import *
 from train_model311 import *
@@ -44,32 +38,13 @@ import matplotlib.image as mpimg
 from PIL import Image
 
 
-
-
-
+import tensorflow
 from tensorflow.keras.losses import categorical_crossentropy, sparse_categorical_crossentropy
 from tensorflow.keras.losses import MeanAbsoluteError, MeanSquaredError 
 from tensorflow.keras.optimizers import SGD, Adam, Adadelta, RMSprop
-
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, CSVLogger
 
 
-
-'''
-df=pd.read_csv(csvpath,sep=' ')
-df120=df.loc[df['kvp']==120.0].sort_values(by=['slice location'])
-df120=df120.loc[df120['slice location'] >= 90.0]
-df80=df.loc[df['kvp']==80.0].sort_values(by=['slice location'])
-
-#read image
-
-#imgs120_train,imgs80_train=readimg(df120,df80,dspath,'midastinum',0.8)
-#imgs120_test,imgs80_test=readimg(df120,df80,dspath,'midastinum',0.2)
-
-imgs120_train,imgs80_train=readimg(df120,df80,dspath,None,0.8)
-imgs120_test,imgs80_test=readimg(df120,df80,dspath,None,0.2)
-
-'''
 
 imgdiff_train = imgs120_train-imgs80_train
 imgdiff_test = imgs120_test-imgs80_test
@@ -83,7 +58,6 @@ imgs80fft_test=imgsfft(imgs80_test)[0]
 
 fftdiff_train = imgs120fft_train-imgs80fft_train
 fftdiff_test = imgs120fft_test-imgs80fft_test
-
 
 
 imgs120fft_train_patch=dim_exp(dmreduce(imgtopatch(imgs120fft_train,64)))
