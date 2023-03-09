@@ -45,29 +45,6 @@ from models import *
 Data Preparation
 ***
 
-#read dicom images (original)
-def readdicom(nm,dspath,window):
-    
-    ds=dicom.dcmread(os.path.join(dspath,nm))
-    #print(ds.SliceLocation)
-    if window!=None:
-        img=set_window(ds.pixel_array,ds,window)
-    else:
-        img=ds.pixel_array
-    return img
-
-
-#read dicom images (with modified pixels)
-def readdicomm(nm,im,dspath,window):
-    
-    ds=dicom.dcmread(os.path.join(dspath,nm))
-    #print(ds.SliceLocation)
-    if window!=None:
-        img=set_window(im,ds,window)
-    else:
-        img=im
-    return img
-
   
 #define the window
 def window_image(image, ds, window_center, window_width):
@@ -96,9 +73,51 @@ def set_window(img,ds,window):
     
     return window_image(img, ds, window_option[window][0], window_option[window][1])
 
+  
+#read dicom images (original)
+def readdicom(nm,dspath,window):
+    
+    ds=dicom.dcmread(os.path.join(dspath,nm))
+    #print(ds.SliceLocation)
+    if window!=None:
+        img=set_window(ds.pixel_array,ds,window)
+    else:
+        img=ds.pixel_array
+    
+    return img
 
+
+#read dicom images (with modified pixels)
+def readdicomm(nm,im,dspath,window):
+    
+    ds=dicom.dcmread(os.path.join(dspath,nm))
+    #print(ds.SliceLocation)
+    if window!=None:
+        img=set_window(im,ds,window)
+    else:
+        img=im
+    
+    return img
+
+  
+#read images and form training, testing datasets
+def readimgfromnm(imgnm1,imgnm2,dspath,window):
+    imgs1=[]
+    imgs2=[]
+    for nm in imgnm1:
+        img=readdicom(nm,dspath,window)
+        #img_sino=sino(img)
+        imgs1.append(img)
+
+    for nm in imgnm2:
+        img=readdicom(nm,dspath,window)
+        #img_sino=sino(img)
+        imgs2.append(img)
+    
+    return np.array(imgs1),np.array(imgs2)
 
    
+    
 #3D array to 2D
 def dmreduce(arr):
     a=[]
