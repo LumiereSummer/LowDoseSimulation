@@ -1,15 +1,15 @@
-from paras2 import *
-from model31 import *
-from InputGeneratePatch import *
-import tensorflow
+from readdata import *
+from model import *
+from utils import *
+
+
 import matplotlib.pyplot as plt
 import numpy as np
 
+import tensorflow
 from tensorflow.keras.losses import categorical_crossentropy, sparse_categorical_crossentropy
 from tensorflow.keras.losses import MeanAbsoluteError, MeanSquaredError 
 from tensorflow.keras.optimizers import SGD, Adam, Adadelta, RMSprop
-
-
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, CSVLogger
 
 
