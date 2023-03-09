@@ -1,7 +1,9 @@
-from readdata import *
-from model import *
-from utils import *
+#train Unet models (different versions)
+#(same function for training Restnet model, only need to change the model name)
 
+from readdata import *
+from model_Unet import *
+from utils import *
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,9 +18,8 @@ from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, CSVLogger
 
 
 
-
-
 def train_model30(eps, batchs, input_shape, lrs,lrs_nm,losses,losses_nm, x_train, y_train, x_test, y_test):
+    
     for i in range(len(losses)):
         for j in range(len(lrs)):
             print('-----start training model30 , adam '+str(lrs[j])+', '+losses_nm[i]+'-----')
@@ -30,11 +31,7 @@ def train_model30(eps, batchs, input_shape, lrs,lrs_nm,losses,losses_nm, x_train
 
             early = EarlyStopping(monitor='loss', min_delta = 0, patience = 250, verbose = 1, mode = 'auto')
 
-
-
             hist = model.fit(x_train, y_train, batch_size = batchs, epochs = eps, verbose = 1, validation_data=(x_test,y_test), callbacks = [checkpoint,early,csv_logger,timecallback()])
-
-
 
             plt.figure()
             plt.plot(hist.history['accuracy'])
@@ -43,16 +40,12 @@ def train_model30(eps, batchs, input_shape, lrs,lrs_nm,losses,losses_nm, x_train
             plt.xlabel('epoch')
             plt.savefig(performance_path+'accuracy curve_adam'+lrs_nm[j]+'_'+losses_nm[i]+'.png')
 
-
             plt.figure()
             plt.plot(hist.history['loss'])
             plt.title('loss curve, adam '+str(lrs[j])+', '+losses_nm[i])
             plt.ylabel('loss')
             plt.xlabel('epoch')
             plt.savefig(performance_path+'loss curve_adam'+lrs_nm[j]+'_'+losses_nm[i]+'.png')
-
-
-
 
             x_test20=x_test[20]
             plt.figure(figsize = (20,20))
@@ -90,6 +83,7 @@ def train_model30(eps, batchs, input_shape, lrs,lrs_nm,losses,losses_nm, x_train
 
 
 def train_model31(eps, batchs, input_shape, lrs,lrs_nm,losses,losses_nm, x_train, y_train, x_test, y_test):
+    
     for i in range(len(losses)):
         for j in range(len(lrs)):
             print('-----start training model3 , adam '+str(lrs[j])+', '+losses_nm[i]+'-----')
@@ -101,11 +95,7 @@ def train_model31(eps, batchs, input_shape, lrs,lrs_nm,losses,losses_nm, x_train
 
             early = EarlyStopping(monitor='loss', min_delta = 0, patience = 250, verbose = 1, mode = 'auto')
 
-
-
             hist = model.fit(x_train, y_train, batch_size = batchs, epochs = eps, verbose = 1, validation_data=(x_test,y_test), callbacks = [checkpoint,early,csv_logger,timecallback()])
-
-
 
             plt.figure()
             plt.plot(hist.history['accuracy'])
@@ -114,16 +104,12 @@ def train_model31(eps, batchs, input_shape, lrs,lrs_nm,losses,losses_nm, x_train
             plt.xlabel('epoch')
             plt.savefig(performance_path+'accuracy curve_adam'+lrs_nm[j]+'_'+losses_nm[i]+'.png')
 
-
             plt.figure()
             plt.plot(hist.history['loss'])
             plt.title('loss curve, adam '+str(lrs[j])+', '+losses_nm[i])
             plt.ylabel('loss')
             plt.xlabel('epoch')
             plt.savefig(performance_path+'loss curve_adam'+lrs_nm[j]+'_'+losses_nm[i]+'.png')
-
-
-
 
             x_test20=x_test[20]
             plt.figure(figsize = (20,20))
@@ -151,6 +137,7 @@ def train_model31(eps, batchs, input_shape, lrs,lrs_nm,losses,losses_nm, x_train
 
 
 def train_model31_cnd(checkpoint0, eps, batchs, input_shape, lrs,lrs_nm,losses,losses_nm, x_train, y_train, x_test, y_test):
+    
     for i in range(len(losses)):
         for j in range(len(lrs)):
             print('-----start training model3 , adam '+str(lrs[j])+', '+losses_nm[i]+'-----')
@@ -163,11 +150,7 @@ def train_model31_cnd(checkpoint0, eps, batchs, input_shape, lrs,lrs_nm,losses,l
 
             early = EarlyStopping(monitor='loss', min_delta = 0, patience = 250, verbose = 1, mode = 'auto')
 
-
-
             hist = model.fit(x_train, y_train, batch_size = batchs, epochs = eps, verbose = 1, validation_data=(x_test,y_test), callbacks = [checkpoint,early,csv_logger,timecallback()])
-
-
 
             plt.figure()
             plt.plot(hist.history['accuracy'])
@@ -176,16 +159,12 @@ def train_model31_cnd(checkpoint0, eps, batchs, input_shape, lrs,lrs_nm,losses,l
             plt.xlabel('epoch')
             plt.savefig(performance_path+'accuracy curve_adam'+lrs_nm[j]+'_'+losses_nm[i]+'cnd.png')
 
-
             plt.figure()
             plt.plot(hist.history['loss'])
             plt.title('loss curve cnd, adam '+str(lrs[j])+', '+losses_nm[i])
             plt.ylabel('loss')
             plt.xlabel('epoch')
             plt.savefig(performance_path+'loss curve_adam'+lrs_nm[j]+'_'+losses_nm[i]+'cnd.png')
-
-
-
 
             x_test20=x_test[20]
             plt.figure(figsize = (20,20))
@@ -215,6 +194,7 @@ def train_model31_cnd(checkpoint0, eps, batchs, input_shape, lrs,lrs_nm,losses,l
 
 
 def train_model32(eps, batchs, input_shape, lrs,lrs_nm,losses,losses_nm, x_train, y_train, x_test, y_test):
+    
     for i in range(len(losses)):
         for j in range(len(lrs)):
             print('-----start training model3 , adam '+str(lrs[j])+', '+losses_nm[i]+'-----')
@@ -226,11 +206,7 @@ def train_model32(eps, batchs, input_shape, lrs,lrs_nm,losses,losses_nm, x_train
 
             early = EarlyStopping(monitor='loss', min_delta = 0, patience = 250, verbose = 1, mode = 'auto')
 
-
-
             hist = model.fit(x_train, y_train, batch_size = batchs, epochs = eps, verbose = 1, validation_data=(x_test,y_test), callbacks = [checkpoint,early,csv_logger,timecallback()])
-
-
 
             plt.figure()
             plt.plot(hist.history['accuracy'])
@@ -239,14 +215,12 @@ def train_model32(eps, batchs, input_shape, lrs,lrs_nm,losses,losses_nm, x_train
             plt.xlabel('epoch')
             plt.savefig(performance_path+'accuracy curve_adam'+lrs_nm[j]+'_'+losses_nm[i]+'.png')
 
-
             plt.figure()
             plt.plot(hist.history['loss'])
             plt.title('loss curve, adam '+str(lrs[j])+', '+losses_nm[i])
             plt.ylabel('loss')
             plt.xlabel('epoch')
             plt.savefig(performance_path+'loss curve_adam'+lrs_nm[j]+'_'+losses_nm[i]+'.png')
-
 
             x_test20=x_test[20]
             plt.figure(figsize = (20,20))
@@ -276,6 +250,7 @@ def train_model32(eps, batchs, input_shape, lrs,lrs_nm,losses,losses_nm, x_train
 
 
 def train_model33(eps, batchs, input_shape, lrs,lrs_nm,losses,losses_nm, x_train, y_train, x_test, y_test):
+    
     for i in range(len(losses)):
         for j in range(len(lrs)):
             print('-----start training model3 , adam '+str(lrs[j])+', '+losses_nm[i]+'-----')
@@ -287,11 +262,7 @@ def train_model33(eps, batchs, input_shape, lrs,lrs_nm,losses,losses_nm, x_train
 
             early = EarlyStopping(monitor='loss', min_delta = 0, patience = 250, verbose = 1, mode = 'auto')
 
-
-
             hist = model.fit(x_train, y_train, batch_size = batchs, epochs = eps, verbose = 1, validation_data=(x_test,y_test), callbacks = [checkpoint,early,csv_logger,timecallback()])
-
-
 
             plt.figure()
             plt.plot(hist.history['accuracy'])
@@ -300,14 +271,12 @@ def train_model33(eps, batchs, input_shape, lrs,lrs_nm,losses,losses_nm, x_train
             plt.xlabel('epoch')
             plt.savefig(performance_path+'accuracy curve_adam'+lrs_nm[j]+'_'+losses_nm[i]+'.png')
 
-
             plt.figure()
             plt.plot(hist.history['loss'])
             plt.title('loss curve, adam '+str(lrs[j])+', '+losses_nm[i])
             plt.ylabel('loss')
             plt.xlabel('epoch')
             plt.savefig(performance_path+'loss curve_adam'+lrs_nm[j]+'_'+losses_nm[i]+'.png')
-
 
             x_test20=x_test[20]
             plt.figure(figsize = (20,20))
