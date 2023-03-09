@@ -59,6 +59,8 @@ lrs_nm=['501','601']
 losses=[MeanAbsoluteError()]
 losses_nm=['mae']
 
-
+#train unet model
 train_model33(5000,4, (64,64,1), lrs, lrs_nm, losses, losses_nm, imgs120_train_patch, diff_train_patch, imgs120_test_patch, diff_test_patch)
 
+#train resnet model
+#train_model12(5000,4, (64,64,1), lrs, lrs_nm, losses, losses_nm, imgs120_train_patch, imgs80_train_patch, imgs120_test_patch, imgs80_test_patch)
