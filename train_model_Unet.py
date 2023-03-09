@@ -1,5 +1,4 @@
 #train Unet models (different versions)
-#(same function for training Restnet model, only need to change the model name)
 
 from readdata import *
 from model_Unet import *
