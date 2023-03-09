@@ -39,7 +39,7 @@ from tensorflow.keras import backend as K
 
 
 ******
-analyse intra
+Intra-image Analyse : Mean pixel value (mean), Standard Deviation (SD), Region Uniformity (RU)
 ******
 def outputanalyse_m(outputpath,imgoutput):
     
@@ -144,7 +144,7 @@ styles = [dict(selector="caption",
 
 
 ******
-mutual information
+Mutual Information and entropy comparison
 ******
 
 def mi3(im_o,im_s,im_t):
@@ -241,7 +241,9 @@ def mi3s(outputpath):
 
 
 ******
-comparison traditionnel
+Traditional IQA metrics: 
+Mean Absolute error (MAE), Root Mean Squared Error (RMSE), 
+Structure Similarity Index Measure (SSIM), Peak Signal Noise Ratio (PSNR)
 ******
 
 def outputanalyse_cp(outputpath):
@@ -354,7 +356,7 @@ def outputanalyse_cp(outputpath):
 
 
 ******
-Histogram
+Histogram Correlation
 ******
 def outputanalyse_h(outputpath):
    
@@ -391,15 +393,7 @@ def outputanalyse_h(outputpath):
     corr_os=[]
     corr_ot=[]
     corr_st=[]
-    inst_os=[]
-    inst_ot=[]
-    inst_st=[]
-    chi2_os=[]
-    chi2_ot=[]
-    chi2_st=[]
-    bhat_os=[]
-    bhat_ot=[]
-    bhat_st=[]
+    
    
     for i in range(len(nm_pairs)):
         #output
@@ -409,65 +403,27 @@ def outputanalyse_h(outputpath):
         #target
         im3=np.loadtxt(outputpath+nm_pairs[i][2])
         #print(nm_pairs[i])
-        hc1=histocompare(im1,im2,im3,'correlation')
-        hc2=histocompare(im1,im2,im3,'intersection')
-        hc3=histocompare(im1,im2,im3,'chi2')
-        hc4=histocompare(im1,im2,im3,'bhatta')
-       
-        corr_os.append(hc1[0])
-        corr_ot.append(hc1[1])
-        corr_st.append(hc1[2])
+        hc=histocompare(im1,im2,im3,'correlation')
         
-        inst_os.append(hc2[0])
-        inst_ot.append(hc2[1])
-        inst_st.append(hc2[2])
-        
-        chi2_os.append(hc3[0])
-        chi2_ot.append(hc3[1])
-        chi2_st.append(hc3[2])
-       
-        bhat_os.append(hc4[0])
-        bhat_ot.append(hc4[1])
-        bhat_st.append(hc4[2])
-        
+        corr_os.append(hc[0])
+        corr_ot.append(hc[1])
+        corr_st.append(hc[2])
    
     outp_corr=pd.DataFrame(list(zip(pair_index,corr_os,corr_ot,corr_st)),
                         columns=['image index', 'simu-high', 'simu-low', 'low-high'])
     outp_corr=outp_corr.sort_values(by=['image index'])
     
-    outp_inst=pd.DataFrame(list(zip(pair_index,inst_os,inst_ot,inst_st)),
-                        columns=['image index', 'simu-high', 'simu-low', 'low-high'])
-    outp_inst=outp_inst.sort_values(by=['image index'])
-    
-    outp_chi2=pd.DataFrame(list(zip(pair_index,chi2_os,chi2_ot,chi2_st)),
-                        columns=['image index', 'simu-high', 'simu-low', 'low-high'])
-    outp_chi2=outp_chi2.sort_values(by=['image index'])
-    
-    outp_bhat=pd.DataFrame(list(zip(pair_index,bhat_os,bhat_ot,bhat_st)),
-                        columns=['image index', 'simu-high', 'simu-low', 'low-high'])
-    outp_bhat=outp_bhat.sort_values(by=['image index'])
     
     imgnms=['simu-high','simu-low','low-high']
     corr_means=[np.mean(corr_os),np.mean(corr_ot),np.mean(corr_st)]
     corr_stds=[np.std(corr_os),np.std(corr_ot),np.std(corr_st)]
-    inst_means=[np.mean(inst_os),np.mean(inst_ot),np.mean(inst_st)]
-    inst_stds=[np.std(inst_os),np.std(inst_ot),np.std(inst_st)]
-    chi2_means=[np.mean(chi2_os),np.mean(chi2_ot),np.mean(chi2_st)]
-    chi2_stds=[np.std(chi2_os),np.std(chi2_ot),np.std(chi2_st)]
-    bhat_means=[np.mean(bhat_os),np.mean(bhat_ot),np.mean(bhat_st)]
-    bhat_stds=[np.std(bhat_os),np.std(bhat_ot),np.std(bhat_st)]
     
-    outp_comp=pd.DataFrame(list(zip(imgnms,corr_means,corr_stds,inst_means,inst_stds,chi2_means,chi2_stds,bhat_means,bhat_stds)),
-                           columns=['images','mean of corr','std of corr','mean of inst','std of inst','mean of chi2','std of chi2','mean of bhat','std of bhat'])
+    outp_comp=pd.DataFrame(list(zip(imgnms,corr_means,corr_stds)),
+                           columns=['images','mean of corr','std of corr'])
     
     
     
-    return outp_corr,outp_inst,outp_chi2,outp_bhat,outp_comp
-
-
-
-
-
+    return outp_corr,outp_comp
 
 
 
@@ -475,6 +431,7 @@ def outputanalyse_h(outputpath):
 ******
 Spectrum
 ******
+#spectrum of one image
 def spectrum1d(img):
     
     # Take the fourier transform of the image.
@@ -493,7 +450,7 @@ def spectrum1d(img):
     return psd1D
     
     
-    
+#compare specturm of output image and original (high and low dose) images: for one model
 def spectrumcompare(outputpath,imgoutput):
     
     nm=os.listdir(outputpath)
@@ -549,9 +506,7 @@ def spectrumcompare(outputpath,imgoutput):
         
         
         
-        
-        
-        
+#compare specturm of output image and original (high and low dose) images: both models
 def spectrumcompare2(outputpath1,outputpath2,imgoutput1,imgoutput2):
     
     nm1=os.listdir(outputpath1)
@@ -634,7 +589,7 @@ def spectrumcompare2(outputpath1,outputpath2,imgoutput1,imgoutput2):
         
 
 
-
+#compare specturm of output image and original (high and low dose) images: both models, at High Frequency
 def spectrumcompare2h(outputpath1,outputpath2,imgoutput1,imgoutput2):
     
     nm1=os.listdir(outputpath1)
@@ -718,22 +673,21 @@ def spectrumcompare2h(outputpath1,outputpath2,imgoutput1,imgoutput2):
         
         
 ******   
-main  
+main, using the functions above (take resnet output as example)  
 ******
 
-
+#Intra-image analyse
 outphdr,outpsmr,outpldr,outpcpr=outputanalyse_m(outputpath_r,imgoutput_r)
 
 index = outphdr.index
 index.name = "high dose image (resnet)"
 outphdr
-#outphd.style.set_caption('high dose image').set_table_styles(styles)
-    
+
 index = outpcpr.index
 index.name = "comparison (resnet)"
 outpcpr
 
-
+#visualisation
 plt.figure(figsize=(12,8))
 plt.scatter(outphdr['image index'],outphdr['mean (high)'],label='high dose image',color='blue')
 plt.scatter(outpldr['image index'],outpldr['mean (low)'],label='low dose image',color='green')
@@ -749,17 +703,16 @@ plt.ylabel('CT values',fontsize=15)
 plt.legend(fontsize=20)
 
 
-
+#Mitual Information and Entropy
 outpmir,micpr=mi3s(outputpath_r)
 outpmir
-
 
 index = micpr.index
 index.name = "comparison of entropy and mutual information (resnet)"
 micpr
 
 
-
+#visualisation
 plt.figure(figsize=(12,8))
 plt.scatter(outpmir['image index'],outpmir['entropy (high)'],label='high dose image',color='blue')
 plt.scatter(outpmir['image index'],outpmir['entropy (low)'],label='low dose image',color='green')
@@ -775,8 +728,7 @@ plt.ylabel('CT values',fontsize=15)
 plt.legend(fontsize=20)
 
 
-
-
+#Traditional IQA metrics
 maesr,rmsesr,ssimsr,psnrsr,outpcppr=outputanalyse_cp(outputpath_r)
 index = maesr.index
 index.name = "mean absolute error (resnet)"
@@ -787,6 +739,7 @@ index.name = "Comparison (resnet)"
 outpcppr
 
 
+#visualisation
 plt.figure(figsize=(12,8))
 plt.scatter(maesr['image index'],maesr['low-high'],label='low-high',color='blue')
 plt.scatter(maesr['image index'],maesr['simu-high'],label='simu-high (resnet)',color='green')
@@ -805,13 +758,10 @@ plt.legend(fontsize=20)
 
 
 
-
-
-
-
-corrr,instr,chi2r,bhatr,histcpr=outputanalyse_h(outputpath_r)
+#Histogram Correlation
+corrr,histcpr=outputanalyse_h(outputpath_r)
 index = corrr.index
-index.name = "Correlation (resnet)"
+index.name = "Histogram Correlation (resnet)"
 corrr
 
 index = histcpr.index
@@ -819,8 +769,22 @@ index.name = "Histogram Comparison (resnet)"
 histcpr
 
 
+#visualisation
+plt.figure(figsize=(12,8))
+plt.scatter(corr['image index'],corr['simu-high'],label='simu-high')
+plt.scatter(corr['image index'],corr['simu-low'],label='simu-low')
+plt.scatter(corr['image index'],corr['low-high'],label='low-high')
+plt.axhline(y=np.nanmean(corr['simu-high']),color='blue')
+plt.axhline(y=np.nanmean(corr['simu-low']),color='orange')
+plt.axhline(y=np.nanmean(corr['low-high']),color='green')
+plt.title('correlation',fontsize=20)
+plt.xlabel('image index',fontsize=15)
+plt.ylabel('ratio',fontsize=15)
+plt.legend(fontsize=20)
 
 
+
+#spectrum comparison
 spectrumcompare2(outputpath_r,outputpath_u,imgoutput_r,imgoutput_u)
 
 
