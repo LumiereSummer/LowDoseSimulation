@@ -293,6 +293,17 @@ def rmpng(imnms):
 Histogram Matching & Histogram Correlation
 ***
 
+def count1(arr):
+    
+    cnt=0
+    for i in range(len(arr)):
+        for j in range(len(arr[i])):
+            if arr[i][j]==1:
+                cnt+=1
+                
+    return cnt
+  
+  
 def bnnm(binary):
     
     bnnm=[]
