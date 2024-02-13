@@ -377,6 +377,22 @@ def imsmatch(template,imgs):
     
     return imgs_match
 
+
+def matchimnm(imref,im_nms,path):
+    
+    diffs=[]
+    #print(im_nms)
+    for i in range(len(im_nms)):
+        nm=os.path.join(path,im_nms[i])
+        im=readdicom(nm,path,'midastinum')
+        #im_struc=strucim(im)
+        diffs.append(abs(diff(imref,im)))
+    
+    tuples = sorted(zip(diffs, im_nms))
+    diffss, imnmss = [t[0] for t in tuples], [t[1] for t in tuples]
+    
+    return diffss,imnmss
+
   
 #find the corresponding reference image (from many) for selected images 
 def findref(pathref,imnmsref,imnms,path):
@@ -391,6 +407,8 @@ def findref(pathref,imnmsref,imnms,path):
         imnm_refs.append(imnm_ref)
     
     return imnm_refs
+
+
 
 #match images with their corresponding reference images
 def imshistmatch(imnms, path, imnms_ref, pathref,pathmatch):
