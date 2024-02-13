@@ -292,6 +292,54 @@ def rmpng(imnms):
 ***
 Histogram Matching & Histogram Correlation
 ***
+
+def bnnm(binary):
+    
+    bnnm=[]
+    for i in range(len(binary)):
+        bnnmi=[]
+        for j in range(len(binary[i])):
+            if binary[i][j]==True:
+                bnnmi.append(1)
+            else:
+                bnnmi.append(0)
+        bnnm.append(bnnmi)
+    
+    return np.asarray(bnnm)
+
+  
+  
+def strucim(im):
+    
+    thresh = filters.threshold_otsu(im)
+    binary = im > thresh
+    binary=bnnm(binary)
+    binary=closing(binary)
+    #print("image binary")
+    plt.imshow(binary)
+    
+    return binary
+
+
+
+def diff(im1,im2):
+    
+    str1=strucim(im1)
+    str2=strucim(im2)
+    diff_bn=str1-str2
+    #print("difference of two binary images")
+    #plt.imshow(diff_bn,cmap="gray")
+    
+    #diff_bn=bnnm(diff_bn)
+        
+    #print("sum of pixels(abs) of binary difference: ", cv2.sumElems(diff_bn))
+
+    #return cv2.sumElems(diff_bn)[0]
+    
+    return count1(diff_bn)
+
+
+
   
   
 #show the global histogram of all images in a dictionary, get these images and their names
