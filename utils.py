@@ -576,11 +576,43 @@ def findscale(imnmsref,pathref,imnmsinput,imsinput,outputs,filenm):
         writer.writerow(hckmn)
         writer.writerows(hcs)
 
+return hckmns[-1],kmax
 
 
 
 
 
+
+***
+Model Output
+***
+
+  
+#apply the trained model on other images : take U Net model as example
+#change the checkpoint and model for applying other model
+def model213output(checkpoint,imgs):
+    
+    model0=generator33((64,64,1))
+    model0.load_weights(checkpoint)
+    
+    wtsp=imgtopatch(imgs,64)
+    outp=model0.predict(dim_exp(dmreduce(wtsp)))
+    otp=[]
+    for i in outp:
+        otp.append(dim_unexp(i))
+    
+    opt_arr=np.array(otp)
+    opt4d=np.reshape(opt_arr,(int(len(opt_arr)/64),64,64,64))
+    outpimg=patchtoimg(opt4d,512)
+    
+    return outpimg
+
+
+
+
+***
+#randomly select nonlesion images and generate their LDCT
+***
   
 
 
@@ -855,31 +887,215 @@ def ldctsimulation_nonlesion_1ref(checkpoint,imnmref,dspathref,dspath,ldctpath,
             #outim2=readdicomm(imnm,imgs[i]-k*pthres0(imgouputs[i],thres),dspath,'midastinum')
         
     return goodnms
-    return hckmns[-1],kmax
+    
 
 
-
-***
-Model Output
-***
 
   
-#apply the trained model on other images : take U Net model as example
-#change the checkpoint and model for applying other model
-def model213output(checkpoint,imgs):
+
+
+
+***
+Check failure
+***
+
+
+
+
+
+
+def clipim(im):
+    mxthres=np.max(im)*0.8
+    mnthres=np.mean(im)
+    mithres=np.min(im)
+    im_clipped= np.where(im > mxthres, mithres, im)
+    im_clipped = np.where(im_clipped > mnthres, mnthres, im_clipped)
+    im_clipped = np.where(im_clipped < mithres, mithres, im_clipped)
+    return im_clipped
+
+
+
+
+def detect_edges_wavelet(image, threshold,ty_wavelet):
+    """
+    Detects horizontal and vertical edges in an image using the Discrete Wavelet Transform.
     
-    model0=generator33((64,64,1))
-    model0.load_weights(checkpoint)
+    Parameters:
+    - image (array-like): Input grayscale image.
+    - threshold (float): Threshold for detecting significant wavelet coefficients, relative to the maximum value.
     
-    wtsp=imgtopatch(imgs,64)
-    outp=model0.predict(dim_exp(dmreduce(wtsp)))
-    otp=[]
-    for i in outp:
-        otp.append(dim_unexp(i))
+    Returns:
+    - horizontal_edges: Binary mask of horizontal edges.
+    - vertical_edges: Binary mask of vertical edges.
+    """
+    # Perform a single-level 2D wavelet transform (Haar wavelet)
+    #coeffs2 = pywt.dwt2(image, 'haar')
+    #coeffs2 = pywt.dwt2(image, 'bior2.2')
+    coeffs2 = pywt.dwt2(image, ty_wavelet)
+    LL, (LH, HL, HH) = coeffs2
+
+    # Normalize the components to the range [0, 1] for easier thresholding
+    LH_norm = np.abs(LH) / np.max(np.abs(LH))
+    HL_norm = np.abs(HL) / np.max(np.abs(HL))
+
+    # Threshold to detect significant horizontal (LH) and vertical (HL) edges
+    horizontal_edges = (LH_norm < threshold).astype(np.uint8) * 255
+    vertical_edges = (HL_norm < threshold).astype(np.uint8) * 255
+
+    return horizontal_edges, vertical_edges
+
+
+
+def detect_xlines(mask,thres_length):
     
-    opt_arr=np.array(otp)
-    opt4d=np.reshape(opt_arr,(int(len(opt_arr)/64),64,64,64))
-    outpimg=patchtoimg(opt4d,512)
+    r,c=mask.shape
+    straightline_ridx=[]
+    area=[]
+    for i in range(r-1):
+        row=mask[i]
+        if 0 in row and np.count_nonzero(row)<100:
+            #print(i)
+            #print("not the background")
+            rowstart=[]
+            rowend=[]
+            for j in range(c-1):
+                if mask[i][j+1]-mask[i][j]==255:
+                    rowstart.append(j+1)
+            for j in range(c-1):
+                #print(mask[i][j+1]-mask[i][j])
+                if mask[i][j+1]-mask[i][j]==1:
+                    rowend.append(j)
+            #print(rowstart)
+            #print(rowend)
+            for m in range(min(len(rowstart),len(rowend))-1):
+                #print(rowend[m]-rowstart[m])
+                if row[0]==0:
+                    if rowend[m]-rowstart[m]>thres_length and len(rowend)>3:
+                        #print("horizontal line detected at row ",i)
+                        straightline_ridx.append(i)
+        
+                else:
+                    if rowend[m+1]-rowstart[m]>thres_length and len(rowstart)>3:
+                        #area.append(rowstart[m],rowend[m+1])
+                        #print("horizontal line detected at row ",i)
+                        straightline_ridx.append(i)
+        
+    return straightline_ridx
+
+
+def detect_ylines(mask,thres_length):
     
-    return outpimg
+    r,c=mask.shape
+    straightline_cidx=[]
+    for j in range(c-1):
+        col=mask[:,j]
+        if 0 in col and np.count_nonzero(col)<100:
+            #print("not the background")
+            colstart=[]
+            colend=[]
+            for i in range(r-1):
+                if mask[i+1][j]-mask[i][j]==255:
+                    colstart.append(i+1)
+                if mask[i+1][j]-mask[i][j]==1:
+                    colend.append(i)
+        
+            for m in range(min(len(colend),len(colstart))-1):
+                if col[0]==0:
+                    if colend[m]-colstart[m]>thres_length and len(colend)>3:
+                        #print("vertical line detected at column ",j)
+                        straightline_cidx.append(j)
+                else:
+                    if colend[m+1]-colstart[m]>thres_length and len(colstart)>3:
+                        #print("vertical line detected at column ",j)
+                        straightline_cidx.append(j)
+                    
+    return straightline_cidx
+
+
+
+def checkNConsecutive(n, l):
+    #print(l)
+    subs = [l[i:i+n] for i in range(len(l)) if len(l[i:i+n]) == n]
+    for sub in subs:
+        if any(sub == l[x:x+n] for x in range(len(l) - len(sub) + 1)):
+            return True
+        else:
+            return False
+
+
+def detect_failure(image,thres_wavelet,ty_wavelet,thres_length):
+    
+    clipped_image=clipim(image)
+    edges_h,edges_v=detect_edges_wavelet(clipped_image,thres_wavelet,ty_wavelet)
+    
+    hxidx=detect_xlines(edges_h,thres_length)
+    hyidx=detect_ylines(edges_h,thres_length)
+    vxidx=detect_xlines(edges_v,thres_length)
+    vyidx=detect_ylines(edges_v,thres_length)
+    
+    failure_candidate=[hxidx,hyidx,vxidx,vyidx]
+    marks=[]
+    if len(np.array(failure_candidate).flatten())>3:
+        for candidate in failure_candidate:
+            #print(candidate)
+            if len(candidate)>2:
+                if checkNConsecutive(2,candidate):
+                    mark='F'
+                else:
+                    mark='G'
+            else:
+                mark='G'
+            marks.append(mark)
+    else:
+        mark='G'
+        marks.append(mark)
+    #print(marks)
+    if 'F' in marks:
+        flag='F'
+    else:
+        flag='G'
+    
+    return flag
+
+
+
+def ldcts_failure(impath,thres_wavelet=0.001,ty_wavelet='db2',thres_length=20):
+    
+    imnms=os.listdir(impath)
+    nmfails=[]
+    for nm in imnms:
+        #print(nm)
+        if nm.split('_')[1].split('.n')[0]=="2.5":
+            #print(nm)
+            image=np.load(os.path.join(impath,nm))
+            if detect_failure(image,thres_wavelet,ty_wavelet,thres_length)=="F":
+                nmfails.append(nm.split('_')[0])
+    
+    return nmfails
+    
+
+    
+def ldcts_failure_csv(simupath,thres_wavelet=0.001,ty_wavelet='db2',thres_length=20):
+    
+    pnms=os.listdir(simupath)
+    pnms.remove('Reference')
+    pnmfails=[]
+    for pnm in pnms:
+        nmfails=[]
+        ppath=os.path.join(simupath,pnm,"outputnpy")
+        print(ppath)
+        snms=os.listdir(ppath)
+        for snm in snms:
+            spath=os.path.join(ppath,snm)
+            print(spath)
+            nmfails.extend(ldcts_failure(spath,thres_wavelet,ty_wavelet,thres_length))
+        pnmfails.append(nmfails)
+        
+    pnmfails_df=pd.DataFrame(list(zip(pnms, pnmfails)),
+                      columns =['Patient', 'Image failed for LDCT'])
+    pnmfails_df.to_csv('/media/lxia/Expansion/AdrenalCharacterisation/lesion_ldct_failnms.csv',index=False)
+    
+    return pnmfails_df
+
+
 
