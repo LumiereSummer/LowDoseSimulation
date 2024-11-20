@@ -493,6 +493,19 @@ def imshistmatch(imnms, path, imnms_ref, pathref,pathmatch):
     return matched
 
 
+#match images with one reference image
+def imshistmatch_ref(imgs,imrefnm,pathref):
+    
+    imgs_match=[]
+    imref=readdicom(imrefnm,pathref,None)
+    for im in imgs:
+        matched = hist_match(im, imref)
+        imgs_match.append(matched)
+    
+    return imgs_match
+
+
+
 #Thresholding: give the threshold pixel vaule to those who exceeds the threshold (the anomaly pixel)
 def pthres(img,thres):
     
@@ -1098,4 +1111,275 @@ def ldcts_failure_csv(simupath,thres_wavelet=0.001,ty_wavelet='db2',thres_length
     return pnmfails_df
 
 
+################################Simulate randomly LDCT for non-lesion images##################################################
 
+
+
+def ldctsimulation_nonlesiong(checkpoint,imnms120,dspathref,dspath,ldctpath,
+                             nonlesionnms,nonlesionslc_nb,batch_nb,
+                             thres_wavelet,ty_wavelet,thres_length,
+                             kmin,kmax,thres=250):
+    
+    
+    outputpath=os.path.join(ldctpath,'output')
+    if os.path.exists(outputpath)!=True:
+        os.mkdir(outputpath)
+    outnpypath=os.path.join(ldctpath,'outputnpy')
+    if os.path.exists(outnpypath)!=True:
+        os.mkdir(outnpypath)
+    
+    # Initialize an empty list to store good images
+    good_simulated_images = []
+    selected_images_set = set()
+    
+    # Keep selecting and processing images until we have 250 good ones
+    goodnms=[]
+    while len(good_simulated_images) < nonlesionslc_nb:
+        
+        # Select a random sample of images from the DataFrame
+        #batch_nb=50
+        if nonlesionslc_nb-len(good_simulated_images)>batch_nb:
+            sample_nb=batch_nb
+        else:
+            sample_nb=nonlesionslc_nb-len(good_simulated_images)
+        
+        remaining_images_df = nonlesionnms[~nonlesionnms.apply(tuple, axis=1).isin(selected_images_set)]
+    
+        # Sample new images, including both Patient and Image columns
+        sample_nms = remaining_images_df.sample(n=sample_nb, replace=False)[['patient', 'image']].values
+
+        # Add the sampled images to the set of selected images to track
+        for row in sample_nms:
+            selected_images_set.add(tuple(row))  # Add as tuple (Patient, Image)
+        
+        
+        sample_ims=[]
+        sample_imsm=[]
+        pdspaths=[]
+        
+        for i in range(len(sample_nms)):
+            pnm=sample_nms[i][0]
+            imnm=sample_nms[i][1]
+            if 'IM00' in imnm:
+                pdspath=os.path.join(dspath,pnm,"IMAGES")
+                pdspaths.append(pdspath)
+                sample_ims.append(readdicom(imnm,pdspath,None))
+                sample_imsm.append(readdicom(imnm,pdspath,'midastinum'))
+        
+            else:
+                pdspath=os.path.join(dspath,pnm,"images")
+                pdspaths.append(pdspath)
+                sample_ims.append(readdicom(imnm,pdspath,None))
+                sample_imsm.append(readdicom(imnm,pdspath,'midastinum'))
+        
+        imnm120_refs=findref_ims(dspathref,imnms120,sample_imsm)
+        print(imnm120_refs)
+        #im120ref=readdicom(imnm120_ref,dspathref,None)
+        
+        ims_matched=imshistmatch_refs(sample_ims, imnm120_refs, dspathref)
+        
+        imgouputs=model213output(checkpoint,np.array(ims_matched))
+        
+        
+        for i in range(len(imgouputs)):
+            pnm=sample_nms[i][0]
+            imnm=sample_nms[i][1]
+            k=random.uniform(kmin, kmax)
+            outim=readdicomm(sample_nms[i][1],sample_ims[i]-k*pthres0(imgouputs[i],thres),pdspaths[i],'midastinum')
+            if detect_failure(outim,thres_wavelet,ty_wavelet,thres_length)!='F':
+                good_simulated_images.append(outim)
+                goodnms.extend(sample_nms[i])
+                plt.imsave(os.path.join(outputpath,pnm+"_"+imnm+'_'+str(round(k,2))+'.png'),outim,cmap='gray')
+                np.save(os.path.join(outnpypath,pnm+"_"+imnm+'_'+str(round(k,2))+'.npy'), outim)
+                
+            if len(good_simulated_images) >= nonlesionslc_nb:
+                print(len(good_simulated_images)," images are simulated. Simulation finished.")
+                break
+        
+        print(len(good_simulated_images)," images are simulated.")    
+            
+            #k1,k2=randomk(kmin, kmax)
+            #outim1=readdicomm(imnm,imgs[i]-k*pthres0(imgouputs[i],thres),dspath,'midastinum')
+            #outim2=readdicomm(imnm,imgs[i]-k*pthres0(imgouputs[i],thres),dspath,'midastinum')
+        
+    return goodnms
+
+
+
+
+def ldctsimulation_nonlesion(checkpoint,imnms120,dspathref,dspath,ldctpath,
+                             nonlesionnms,nonlesionslc_nb,batch_nb,
+                             thres_wavelet,ty_wavelet,thres_length,
+                             kmin,kmax,thres=250):
+    
+    
+    outputpath=os.path.join(ldctpath,'output')
+    if os.path.exists(outputpath)!=True:
+        os.mkdir(outputpath)
+    outnpypath=os.path.join(ldctpath,'outputnpy')
+    if os.path.exists(outnpypath)!=True:
+        os.mkdir(outnpypath)
+    
+    # Initialize an empty list to store good images
+    good_simulated_images = []
+    selected_images_set = set()
+    
+    # Keep selecting and processing images until we have 250 good ones
+    goodnms=[]
+    while len(good_simulated_images) < nonlesionslc_nb:
+        
+        # Select a random sample of images from the DataFrame
+        #batch_nb=50
+        if nonlesionslc_nb-len(good_simulated_images)>batch_nb:
+            sample_nb=batch_nb
+        else:
+            sample_nb=nonlesionslc_nb-len(good_simulated_images)
+        
+        remaining_images_df = nonlesionnms[~nonlesionnms.apply(tuple, axis=1).isin(selected_images_set)]
+    
+        # Sample new images, including both Patient and Image columns
+        sample_nms = remaining_images_df.sample(n=sample_nb, replace=False)[['patient', 'image']].values
+
+        # Add the sampled images to the set of selected images to track
+        for row in sample_nms:
+            selected_images_set.add(tuple(row))  # Add as tuple (Patient, Image)
+        
+        
+        sample_ims=[]
+        sample_imsm=[]
+        pdspaths=[]
+        
+        for i in range(len(sample_nms)):
+            pnm=sample_nms[i][0]
+            imnm=sample_nms[i][1]
+            if 'IM00' in imnm:
+                pdspath=os.path.join(dspath,pnm,"IMAGES")
+                pdspaths.append(pdspath)
+                sample_ims.append(readdicom(imnm,pdspath,None))
+                sample_imsm.append(readdicom(imnm,pdspath,'midastinum'))
+        
+            else:
+                pdspath=os.path.join(dspath,pnm,"images")
+                pdspaths.append(pdspath)
+                sample_ims.append(readdicom(imnm,pdspath,None))
+                sample_imsm.append(readdicom(imnm,pdspath,'midastinum'))
+        
+        imnm120_refs=findref_ims(dspathref,imnms120,sample_imsm)
+        print(imnm120_refs)
+        #im120ref=readdicom(imnm120_ref,dspathref,None)
+        
+        ims_matched=imshistmatch_refs(sample_ims, imnm120_refs, dspathref)
+        
+        imgouputs=model213output(checkpoint,np.array(ims_matched))
+        
+        
+        for i in range(len(imgouputs)):
+            pnm=sample_nms[i][0]
+            imnm=sample_nms[i][1]
+            k=random.uniform(kmin, kmax)
+            outim=readdicomm(sample_nms[i][1],sample_ims[i]-k*pthres0(imgouputs[i],thres),pdspaths[i],'midastinum')
+            good_simulated_images.append(outim)
+            goodnms.extend(sample_nms[i])
+            plt.imsave(os.path.join(outputpath,pnm+"_"+imnm+'_'+str(round(k,2))+'.png'),outim,cmap='gray')
+            np.save(os.path.join(outnpypath,pnm+"_"+imnm+'_'+str(round(k,2))+'.npy'), outim)
+            
+            
+            if len(good_simulated_images) >= nonlesionslc_nb:
+                print(len(good_simulated_images)," images are simulated. Simulation finished.")
+                break
+    
+        print(len(good_simulated_images)," images are simulated.")
+            
+            #k1,k2=randomk(kmin, kmax)
+            #outim1=readdicomm(imnm,imgs[i]-k*pthres0(imgouputs[i],thres),dspath,'midastinum')
+            #outim2=readdicomm(imnm,imgs[i]-k*pthres0(imgouputs[i],thres),dspath,'midastinum')
+        
+    return goodnms
+
+
+
+def ldctsimulation_nonlesion_1ref(checkpoint,imnmref,dspathref,dspath,ldctpath,
+                             nonlesionnms,nonlesionslc_nb,batch_nb,
+                             thres_wavelet,ty_wavelet,thres_length,
+                             kmin,kmax,thres=250):
+    
+    
+    outputpath=os.path.join(ldctpath,'output')
+    if os.path.exists(outputpath)!=True:
+        os.mkdir(outputpath)
+    outnpypath=os.path.join(ldctpath,'outputnpy')
+    if os.path.exists(outnpypath)!=True:
+        os.mkdir(outnpypath)
+    
+    # Initialize an empty list to store good images
+    good_simulated_images = []
+    selected_images_set = set()
+    
+    # Keep selecting and processing images until we have 250 good ones
+    goodnms=[]
+    while len(good_simulated_images) < nonlesionslc_nb:
+        
+        # Select a random sample of images from the DataFrame
+        #batch_nb=50
+        if nonlesionslc_nb-len(good_simulated_images)>batch_nb:
+            sample_nb=batch_nb
+        else:
+            sample_nb=nonlesionslc_nb-len(good_simulated_images)
+        
+        remaining_images_df = nonlesionnms[~nonlesionnms.apply(tuple, axis=1).isin(selected_images_set)]
+    
+        # Sample new images, including both Patient and Image columns
+        sample_nms = remaining_images_df.sample(n=sample_nb, replace=False)[['patient', 'image']].values
+
+        # Add the sampled images to the set of selected images to track
+        for row in sample_nms:
+            selected_images_set.add(tuple(row))  # Add as tuple (Patient, Image)
+        
+        
+        sample_ims=[]
+        #sample_imsm=[]
+        pdspaths=[]
+        
+        for i in range(len(sample_nms)):
+            pnm=sample_nms[i][0]
+            imnm=sample_nms[i][1]
+            if 'IM00' in imnm:
+                pdspath=os.path.join(dspath,pnm,"IMAGES")
+                pdspaths.append(pdspath)
+                sample_ims.append(readdicom(imnm,pdspath,None))
+                #sample_imsm.append(readdicom(imnm,pdspath,'midastinum'))
+        
+            else:
+                pdspath=os.path.join(dspath,pnm,"images")
+                pdspaths.append(pdspath)
+                sample_ims.append(readdicom(imnm,pdspath,None))
+                #sample_imsm.append(readdicom(imnm,pdspath,'midastinum'))
+        
+        #imnm120_refs=findref_ims(dspathref,imnms120,sample_imsm)
+        #print(imnm120_refs)
+        #im120ref=readdicom(imnm120_ref,dspathref,None)
+        
+        ims_matched=imshistmatch_ref(sample_ims, imnmref, dspathref)
+        
+        imgouputs=model213output(checkpoint,np.array(ims_matched))
+        
+        
+        for i in range(len(imgouputs)):
+            pnm=sample_nms[i][0]
+            imnm=sample_nms[i][1]
+            k=random.uniform(kmin, kmax)
+            outim=readdicomm(sample_nms[i][1],sample_ims[i]-k*pthres0(imgouputs[i],thres),pdspaths[i],'midastinum')
+            good_simulated_images.append(outim)
+            goodnms.extend(sample_nms[i])
+            plt.imsave(os.path.join(outputpath,pnm+"_"+imnm+'_'+str(round(k,2))+'.png'),outim,cmap='gray')
+            np.save(os.path.join(outnpypath,pnm+"_"+imnm+'_'+str(round(k,2))+'.npy'), outim)
+            
+            
+            if len(good_simulated_images) >= nonlesionslc_nb:
+                print(len(good_simulated_images)," images are simulated. Simulation finished.")
+                break
+    
+        print(len(good_simulated_images)," images are simulated.")
+            
+        
+    return goodnms
